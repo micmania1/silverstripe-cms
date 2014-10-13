@@ -1,17 +1,21 @@
 <?php
 
+use SilverStripe\Framework\Filesystem\FilesystemManager;
+
 /**
  * Tests link tracking to files and images.
  */
 class FileLinkTrackingTest extends SapphireTest {
+
 	protected static $fixture_file = "FileLinkTrackingTest.yml";
 	
 	public function setUp() {
 		parent::setUp();
+		$filesystem = $this->getFilesystem();
 		$this->logInWithPermission('ADMIN');
 		
-		if(!file_exists(ASSETS_PATH)) mkdir(ASSETS_PATH);
-		$fh = fopen(ASSETS_PATH . '/testscript-test-file.pdf', "w");
+		if(!$filesystem->isDir('assets')) $filesystem->createDir('assets');
+		$fh = fopen($filesystem->getBasePath() . '/testscript-test-file.pdf', "w");
 		fwrite($fh, str_repeat('x',1000000));
 		fclose($fh);
 	}
@@ -23,9 +27,15 @@ class FileLinkTrackingTest extends SapphireTest {
 			'/renamed-test-file.pdf',
 			'/renamed-test-file-second-time.pdf',
 		);
+		$filesystem = $this->getFilesystem();
 		foreach($testFiles as $file) {
-			if(file_exists(ASSETS_PATH . $file)) unlink(ASSETS_PATH . $file);
+			if($filesystem->has($file)) $filesystem->delete($file);
 		}
+	}
+
+	public function getFilesystem() {
+		$filesystem = Config::inst()->get('File', 'default_filesystem');
+		return FilesystemManager::inst()->get($filesystem);
 	}
 	
 	public function testFileRenameUpdatesDraftAndPublishedPages() {
@@ -37,7 +47,7 @@ class FileLinkTrackingTest extends SapphireTest {
 		$file = $this->objFromFixture('File', 'file1');
 		$file->Name = 'renamed-test-file.pdf';
 		$file->write();
-		
+
 		$this->assertContains('<img src="assets/renamed-test-file.pdf"',
 			DB::prepared_query("SELECT \"Content\" FROM \"SiteTree\" WHERE \"ID\" = ?", array($page->ID))->value());
 		$this->assertContains('<img src="assets/renamed-test-file.pdf"',
@@ -54,12 +64,12 @@ class FileLinkTrackingTest extends SapphireTest {
 		$svp->CopyContentFromID = $page->ID;
 		$svp->write();
 		$svp->doPublish();
-			
+
 		// Rename the file
 		$file = $this->objFromFixture('File', 'file1');
 		$file->Name = 'renamed-test-file.pdf';
 		$file->write();
-		
+
 		// Verify that the draft and publish virtual pages both have the corrected link
 		$this->assertContains('<img src="assets/renamed-test-file.pdf"',
 			DB::prepared_query("SELECT \"Content\" FROM \"SiteTree\" WHERE \"ID\" = ?", array($svp->ID))->value());
@@ -102,7 +112,7 @@ class FileLinkTrackingTest extends SapphireTest {
 		$file = DataObject::get_by_id('File', $file->ID);
 		$file->Name = 'renamed-test-file-second-time.pdf';
 		$file->write();
-		
+
 		// Confirm that the correct image is shown in both the draft and live site
 		$this->assertContains('<img src="assets/renamed-test-file-second-time.pdf"',
 			DB::prepared_query("SELECT \"Content\" FROM \"SiteTree\" WHERE \"ID\" = ?", array($page->ID))->value());
