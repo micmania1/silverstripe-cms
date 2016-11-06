@@ -24,8 +24,6 @@ ShortcodeParser::get('default')->register(
 	array('SilverStripe\\CMS\\Model\\SiteTree', 'link_shortcode_handler')
 );
 
-File::add_extension('SilverStripe\\CMS\\Model\\SiteTreeFileExtension');
-
 // TODO Remove once we can configure CMSMenu through static, nested configuration files
 CMSMenu::remove_menu_class('SilverStripe\\CMS\\Controllers\\CMSMain');
 CMSMenu::remove_menu_class('SilverStripe\\CMS\\Controllers\\CMSPageEditController');

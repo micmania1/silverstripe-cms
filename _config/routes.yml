@@ -1,7 +1,6 @@
 ---
 Name: modelascontrollerroutes
-Before: '*'
-After: '#rootroutes'
+After: '#coreroutes'
 ---
 SilverStripe\Control\Director:
   rules:
@@ -11,7 +10,7 @@ SilverStripe\Control\Director:
     '$URLSegment//$Action/$ID/$OtherID': 'SilverStripe\CMS\Controllers\ModelAsController'
 ---
 Name: legacycmsroutes
-After: '#adminroutes'
+Before: '#modelascontrollerroutes'
 ---
 SilverStripe\Control\Director:
   rules:
